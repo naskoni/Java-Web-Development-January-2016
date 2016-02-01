@@ -8,6 +8,6 @@
 <body>
 	<ct:Header title="${title}"/>
 	<jsp:doBody/>	
-	<ct:Footer showDate="${showDate}" version="${version}"/>	
+	<ct:Footer version="${version}" showDate="${showDate}" />	
 </body>
 </html>
