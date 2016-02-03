@@ -1,8 +1,6 @@
 package bg.jwd.filters;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -11,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -18,7 +17,8 @@ import javax.servlet.http.HttpSession;
 @WebFilter("/*")
 public class SecurityFilter implements Filter {
 
-	private final Map<String, String> users = new HashMap<>();	
+	private final String user = "Pesho";	
+	private final String password = "123";
 	
 	@Override
 	public void destroy() {
@@ -27,42 +27,36 @@ public class SecurityFilter implements Filter {
 	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 			throws IOException, ServletException {
-		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		HttpServletResponse httpResponse = (HttpServletResponse) response;
+		HttpServletRequest request = (HttpServletRequest) req;
+		HttpServletResponse response = (HttpServletResponse) res;			
 		
-		users.put("Pesho", "123");
-		users.put("Gosho", "456");		
-		
-		String requestUsername = request.getParameter("user");
-		String requestPassword = request.getParameter("pwd");
-		boolean isInputValid = requestUsername != null 
-				&& !requestUsername.isEmpty() 
-				&& requestPassword != null
-				&& !requestPassword.isEmpty();		
-		if (isInputValid) {
-			boolean userExistInDatabase = users.containsKey(requestUsername);
-			boolean isPasswordCorrect =  users.get(requestUsername).equals(requestPassword);
-			if (userExistInDatabase && isPasswordCorrect) {
-				httpRequest.getSession().setAttribute("username", requestUsername);
-				//System.out.println(httpRequest.getSession().getAttribute("username"));
-				httpResponse.sendRedirect("/Homework-ContainersFiltersSessions/pages/HomePage.jsp");			
-			}
+		String requestUsername = req.getParameter("user");
+		String requestPassword = req.getParameter("pwd");
+			
+		if (user.equals(requestUsername) && password.equals(requestPassword)) {			
+			request.getSession().setAttribute("username", requestUsername);
+			request.getSession().setMaxInactiveInterval(60);
+			
+			Cookie cookie = new Cookie("user", requestUsername);
+			cookie.setMaxAge(60);			
+			response.addCookie(cookie);
+			
+			response.sendRedirect("/Homework-ContainersFiltersSessions/pages/HomePage.jsp");
 		} else {			
-			if (httpRequest.getSession().getAttribute("username") != null) {
-				//System.out.println(httpRequest.getSession().getAttribute("username"));
-				chain.doFilter(request, response);
+			if (request.getSession().getAttribute("username") != null) {				;
+				chain.doFilter(req, res);
 			} else {
-				HttpSession session = httpRequest.getSession(false);
-				String loginURL = httpRequest.getContextPath() + "/pages/LoginForm.jsp";
+				HttpSession session = request.getSession(false);
+				String loginURL = request.getContextPath() + "/pages/LoginForm.jsp";
 				
-				boolean isLogginRequest = loginURL.equals(httpRequest.getRequestURI());
+				boolean isLogginRequest = loginURL.equals(request.getRequestURI());
 				boolean loggedIn = session != null && session.getAttribute("username") != null;
 				if (loggedIn || isLogginRequest) {
-					chain.doFilter(request, response);			
+					chain.doFilter(req, res);			
 				} else {
-					httpResponse.sendRedirect("/Homework-ContainersFiltersSessions/pages/LoginForm.jsp");
+					response.sendRedirect("/Homework-ContainersFiltersSessions/pages/LoginForm.jsp");
 				}	
 			}
 		}		
