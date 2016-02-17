@@ -1,0 +1,6 @@
+<%@ page isErrorPage="true" import="java.io.*" contentType="text/plain"%>
+..................................
+Message:
+<%=exception.getCause().getMessage()%>
+..................................
+Press back to return to main page.
